@@ -1,76 +1,115 @@
-import { React, useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import Form from 'react-bootstrap/Form';
-import Container from 'react-bootstrap/Container';
-import Button from 'react-bootstrap/Button';
-import { useSelector, useDispatch } from 'react-redux';
-import { thunkLogin } from 'store/user';
-import AppSpinner from 'components/app-spinner';
+import { React, useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import Form from "react-bootstrap/Form";
+import Container from "react-bootstrap/Container";
+import Button from "react-bootstrap/Button";
+import Alert from "react-bootstrap/Alert";
+import { useSelector, useDispatch } from "react-redux";
+import { useLoginMutation } from "services/user-api";
+import { actionLoginSucceeded, selectCurrentUser } from "store/user-slice";
+import AppSpinner from "components/app-spinner";
 
-const Login = props => {
-    const [username, setUsername] = useState("");
-    const [password, setPassword] = useState("");
-    const [validated, setValidated] = useState(false);
-    const navigate = useNavigate();
-    const dispatch = useDispatch();
-    const { user, isProcessing } = useSelector(state => state.sliceUser);
+const Login = (props) => {
+  const userSlice = useSelector(selectCurrentUser);
+  const [formModel, setFormModel] = useState({
+    username: "",
+    password: "",
+  });
+  const [formStatus, setFormStatus] = useState({
+    validated: false,
+    error: "",
+  });
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const [login, { isLoading: isProcessing }] = useLoginMutation();
 
-    useEffect(() => {
-        if (user.token) {
-            navigate('/');
-        }
-    }, [navigate, user.token]);
+  useEffect(() => {
+    if (userSlice?.isLoggedIn) {
+      navigate("/");
+    }
+  }, [navigate, userSlice]);
 
-    const handleSubmit = event => {
-        event.preventDefault();
-        event.stopPropagation();
-        setValidated(true);
-        const form = event.currentTarget;
-        if (form.checkValidity()) {
-            login();
-        }
-    };
-  
-    const onChangeUsername = e => {
-        const username = e.target.value;
-        setUsername(username);
-    };
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
 
-    const onChangePassword = e => {
-        const password = e.target.value;
-        setPassword(password);
-    };
+    const form = event.currentTarget;
+    const isFormValid = form.checkValidity();
+    setFormStatus({
+        ...formStatus,
+        validated: true,
+    });
+    if (isFormValid) {
+      login(formModel)
+        .unwrap()
+        .then((response) => {
+          const userData = {
+            username: formModel.username,
+            token: response.token,
+          };
+          dispatch(actionLoginSucceeded(userData));
+        })
+        .catch((response) => {
+          const msg = response.data.error;
+          setFormStatus({
+            ...formStatus,
+            error: msg,
+          });
+        });
+    }
+  };
 
-    const login = () => {
-        dispatch(thunkLogin({username, password}));
-    };
+  const handleFieldChange = (e) => {
+    const { name, value } = e.target;
+    setFormModel({
+      ...formModel,
+      [name]: value,
+    });
+  };
 
-    return (
-        <Container>
-        { isProcessing && (
-            <AppSpinner />
-        )}
-        <Form noValidate validated={validated} onSubmit={handleSubmit}>
-            <Form.Group className='mb-3'>
-                <Form.Label>Username</Form.Label>
-                <Form.Control required type='text' placeholder='Enter username'
-                value={username} onChange={onChangeUsername} />
-                <Form.Control.Feedback type="invalid">
-                    Please enter a username.
-                </Form.Control.Feedback>
-            </Form.Group>
-            <Form.Group className='mb-3'>
-                <Form.Label>Password</Form.Label>
-                <Form.Control required type='password' placeholder='Enter password'
-                value={password} onChange={onChangePassword} />
-               <Form.Control.Feedback type="invalid">
-                    Please enter a password.
-                </Form.Control.Feedback>
-            </Form.Group>
-            <Button type="submit" variant='primary'>Login</Button>
-        </Form>
-        </Container>
-    );
-}
+  return (
+    <Container>
+      {isProcessing && <AppSpinner />}
+      {formStatus.error && (
+        <Alert variant="danger">
+          <h4>Oops! {formStatus.error}</h4>
+        </Alert>
+      )}
+      <Form noValidate validated={formStatus.validated} onSubmit={handleSubmit}>
+        <Form.Group className="mb-3">
+          <Form.Label>Username</Form.Label>
+          <Form.Control
+            required
+            type="text"
+            placeholder="Enter username"
+            value={formModel.username}
+            name="username"
+            onChange={handleFieldChange}
+          />
+          <Form.Control.Feedback type="invalid">
+            Please enter a username.
+          </Form.Control.Feedback>
+        </Form.Group>
+        <Form.Group className="mb-3">
+          <Form.Label>Password</Form.Label>
+          <Form.Control
+            required
+            type="password"
+            placeholder="Enter password"
+            value={formModel.password}
+            name="password"
+            onChange={handleFieldChange}
+          />
+          <Form.Control.Feedback type="invalid">
+            Please enter a password.
+          </Form.Control.Feedback>
+        </Form.Group>
+        <Button type="submit" variant="primary">
+          Login
+        </Button>
+      </Form>
+    </Container>
+  );
+};
 
 export default Login;
