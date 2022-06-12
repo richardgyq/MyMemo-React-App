@@ -3,9 +3,11 @@ import { configureStore, combineReducers } from "@reduxjs/toolkit";
 import { myMemoApi } from "services/mymemo-api";
 import { userApi } from "services/user-api";
 import userSlice, { actionLogoutSucceeded } from "./user-slice";
+import memoListOptionsSlice from "./memo-list-options-slice";
 
 const combinedReducer = combineReducers({
   userSlice,
+  memoListOptionsSlice,
   [myMemoApi.reducerPath]: myMemoApi.reducer,
   [userApi.reducerPath]: userApi.reducer,
 });
