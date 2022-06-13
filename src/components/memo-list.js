@@ -124,38 +124,35 @@ const MemoList = (props) => {
     return (
       <Card key={memo.id} className="mb-3" border={borderType}>
         <Card.Body>
-          <Container>
-            <Card.Title>
-              <FontAwesomeIcon
-                icon={memo.favourite ? fasStar : faStar}
-                title="Toggle Star"
-                onClick={() => toggleStarById(memo.id)}
-              ></FontAwesomeIcon>
-              {memo.title}
-            </Card.Title>
-            <Card.Text>
-              <b>Memo:</b>
-              {memo.memo}
-            </Card.Text>
-            <Card.Text>
-              Date created: {moment(memo.created).format("Do MMMM YYYY")}
-            </Card.Text>
-          </Container>
-          <hr />
-          <Container>
-            <Link to={`/memos/${memo.id}`} state={{ currentMemo: memo }}>
-              <Button variant="outline-info" className="me-2">
-                Edit
-              </Button>
-            </Link>
-            <Button
-              variant="outline-danger"
-              onClick={() => setMemoToDelete(memo)}
-            >
-              Delete
-            </Button>
-          </Container>
+          <Card.Title>
+            <FontAwesomeIcon
+              icon={memo.favourite ? fasStar : faStar}
+              title="Toggle Star"
+              onClick={() => toggleStarById(memo.id)}
+            ></FontAwesomeIcon>
+            &nbsp;{memo.title}
+          </Card.Title>
+          <Card.Text>
+            <b>Memo: </b>
+            {memo.memo}
+          </Card.Text>
+          <Card.Text>
+            Date created: {moment(memo.created).format("Do MMMM YYYY")}
+          </Card.Text>
         </Card.Body>
+        <Card.Footer>
+          <Link to={`/memos/${memo.id}`} state={{ currentMemo: memo }}>
+            <Button variant="outline-info" className="me-2">
+              Edit
+            </Button>
+          </Link>
+          <Button
+            variant="outline-danger"
+            onClick={() => setMemoToDelete(memo)}
+          >
+            Delete
+          </Button>
+        </Card.Footer>
       </Card>
     );
   };
@@ -202,67 +199,67 @@ const MemoList = (props) => {
   return (
     <Container>
       {(isLoading || isDeleting || isUpdating) && <AppSpinner />}
-      <Container>
+      <Row>
         <Link to="/memos/create">
           <Button varient="outline-info" className="mb-3">
             Add Memo
           </Button>
         </Link>
-        <Container>
-          <Row className="align-items-center">
-            <Col xs="auto">
-              <Form.Check
-                type="switch"
-                id="switch_starred"
-                label="Starred"
-                checked={listOptions.showFavouritesOnly}
-                onChange={toggleStarFilter}
+      </Row>
+      <Row className="align-items-center justify-content-md-center">
+        <Col sm="auto">
+          <Form.Check
+            type="switch"
+            id="switch_starred"
+            label="Starred"
+            checked={listOptions.showFavouritesOnly}
+            onChange={toggleStarFilter}
+          />
+        </Col>
+        <Col sm md={3}>
+          <InputGroup className="my-2">
+            <InputGroup.Text>
+              <FontAwesomeIcon icon={faSearch} />
+            </InputGroup.Text>
+            <Form.Control
+              type="text"
+              placeholder="Search here..."
+              value={listOptions.filterText}
+              onChange={handleFilterTextChange}
+            />
+            {listOptions.filterText && (
+              <InputGroup.Text onClick={clearFilterText}>
+                <FontAwesomeIcon icon={faXmark} />
+              </InputGroup.Text>
+            )}
+          </InputGroup>
+        </Col>
+        <Col sm md={3}>
+          <InputGroup className="my-2">
+            <InputGroup.Text>
+              <FontAwesomeIcon icon={faSort} />
+            </InputGroup.Text>
+            <Form.Select
+              value={listOptions.sorting.by}
+              onChange={handleSortFieldChange}
+            >
+              <option value="created">Date</option>
+              <option value="title">Title</option>
+              <option value="memo">Memo</option>
+            </Form.Select>
+            <InputGroup.Text onClick={toggleSortDirection}>
+              <FontAwesomeIcon
+                icon={listOptions.sorting.desc ? faArrowDown : faArrowUp}
               />
-            </Col>
-            <Col>
-              <InputGroup>
-                <InputGroup.Text>
-                  <FontAwesomeIcon icon={faSearch} />
-                </InputGroup.Text>
-                <Form.Control
-                  type="text"
-                  placeholder="Search here..."
-                  value={listOptions.filterText}
-                  onChange={handleFilterTextChange}
-                />
-                {listOptions.filterText && (
-                  <InputGroup.Text onClick={clearFilterText}>
-                    <FontAwesomeIcon icon={faXmark} />
-                  </InputGroup.Text>
-                )}
-              </InputGroup>
-            </Col>
-            <Col>
-              <InputGroup>
-                <InputGroup.Text>
-                  <FontAwesomeIcon icon={faSort} />
-                </InputGroup.Text>
-                <Form.Select
-                  value={listOptions.sorting.by}
-                  onChange={handleSortFieldChange}
-                >
-                  <option value="created">Date</option>
-                  <option value="title">Title</option>
-                  <option value="memo">Memo</option>
-                </Form.Select>
-                <InputGroup.Text onClick={toggleSortDirection}>
-                  <FontAwesomeIcon
-                    icon={listOptions.sorting.desc ? faArrowDown : faArrowUp}
-                  />
-                </InputGroup.Text>
-              </InputGroup>
-            </Col>
-          </Row>
-        </Container>
+            </InputGroup.Text>
+          </InputGroup>
+        </Col>
+      </Row>
+      <Row>
         {sortedMemos.map((memo) => (
           <MemoCard key={memo.id} memo={memo} />
         ))}
-      </Container>
+      </Row>
       <MemoDeleteConfirmationModal />
     </Container>
   );
