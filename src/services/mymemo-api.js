@@ -35,7 +35,8 @@ export const myMemoApi = createApi({
 
     getMemo: builder.query({
       query: (id) => `${id}/`,
-      providesTags: (_result, _error, id) => [{ type: CACHE_TAG_MEMOS, id }],
+      providesTags: (result) =>
+        result ? [{ type: CACHE_TAG_MEMOS, id: result.id }] : [],
     }),
 
     createMemo: builder.mutation({
@@ -87,6 +88,7 @@ export const myMemoApi = createApi({
 });
 
 export const {
+  useGetMemoQuery,
   useGetMemosQuery,
   useCreateMemoMutation,
   useUpdateMemoMutation,

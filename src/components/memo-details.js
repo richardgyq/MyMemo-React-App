@@ -1,10 +1,11 @@
-import { React, useState } from "react";
+import { React, useState, useEffect } from "react";
 import Form from "react-bootstrap/Form";
 import Container from "react-bootstrap/Container";
 import Button from "react-bootstrap/Button";
 import Alert from "react-bootstrap/Alert";
-import { Link, useLocation } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import {
+  useGetMemoQuery,
   useCreateMemoMutation,
   useUpdateMemoMutation,
 } from "services/mymemo-api";
@@ -12,23 +13,37 @@ import { CREATE_MEMO, UPDATE_MEMO } from "constants";
 import AppSpinner from "components/app-spinner";
 
 const MemoDetails = (props) => {
-  const [createMemo, { isLoading: isCreating }] = useCreateMemoMutation();
-  const [updateMemo, { isLoading: isUpdating }] = useUpdateMemoMutation();
+  const { id: memoId } = useParams();
+  const [createMemo, { isLoading: isCreating, error: errorCreate }] =
+    useCreateMemoMutation();
+  const [updateMemo, { isLoading: isUpdating, error: errorUpdate }] =
+    useUpdateMemoMutation();
 
-  const location = useLocation();
-  const emptyFormData = { title: "", memo: "" };
+  const emptyMemo = { title: "", memo: "" };
+  const {
+    data: memo = emptyMemo,
+    isLoading,
+    error: errorLoadingMemo,
+  } = useGetMemoQuery(memoId, {
+    skip: !memoId,
+  });
+
+  const navigate = useNavigate();
+  const mode = memoId ? UPDATE_MEMO : CREATE_MEMO;
   const initialFormStatus = {
     validated: false,
     submitted: false,
-    error: "",
   };
-  const initialFormModel =
-    location.state && location.state.currentMemo
-      ? location.state.currentMemo
-      : emptyFormData;
+
   // local states
-  const [formModel, setFormModel] = useState(initialFormModel);
+  const [formModel, setFormModel] = useState(emptyMemo);
   const [formStatus, setFormStatus] = useState(initialFormStatus);
+
+  useEffect(() => {
+    if (mode === UPDATE_MEMO && !isLoading) {
+      setFormModel(memo);
+    }
+  }, [memo, isLoading, mode]);
 
   const handleFieldChange = (e) => {
     const { name, value } = e.target;
@@ -45,69 +60,59 @@ const MemoDetails = (props) => {
     const form = event.currentTarget;
     const isFormValid = form.checkValidity();
     setFormStatus({
-        ...formStatus,
-        validated: true,
+      ...formStatus,
+      validated: true,
     });
     if (isFormValid) {
       save();
     }
   };
 
+  const isMemoChanged = () =>
+    formModel.title !== memo.title || formModel.memo !== memo.memo;
+
   const save = () => {
-    if (props.mode === UPDATE_MEMO) {
-      updateMemo(formModel)
-        .unwrap()
-        .catch((response) => {
-          const msg = response.data.error;
-          setFormStatus({
-            ...formStatus,
-            error: msg,
-          });
-        });
-    } else if (props.mode === CREATE_MEMO) {
-      createMemo(formModel)
-        .unwrap()
-        .then(() => {
-          setFormModel(emptyFormData);
-        })
-        .catch((response) => {
-          const msg = response.data.error;
-          setFormStatus({
-            ...formStatus,
-            error: msg,
-          });
-        });
+    if (mode === UPDATE_MEMO) {
+      if (isMemoChanged()) {
+        updateMemo(formModel);
+      } else {
+        goBack();
+      }
+    } else if (mode === CREATE_MEMO) {
+      createMemo(formModel);
     }
     setFormStatus({
       submitted: true,
       validated: false,
-      error: "",
     });
   };
 
-  const isBusy = isCreating || isUpdating;
+  const goBack = () => {
+    navigate(-1);
+  };
+
+  const isBusy = isCreating || isUpdating || isLoading;
+  const error = errorLoadingMemo ?? errorCreate ?? errorUpdate;
+
+  if (!isBusy && formStatus.submitted && !error) {
+    goBack();
+    return <></>;
+  }
+
   return (
     <Container>
       {isBusy && <AppSpinner />}
-      {!isBusy && formStatus.submitted && formStatus.error && (
+      {!isBusy && formStatus.submitted && error && (
         <Alert variant="danger">
-          <h4>Oops! {formStatus.error}</h4>
-        </Alert>
-      )}
-      {!isBusy && formStatus.submitted && !formStatus.error && (
-        <Alert variant="info">
           <h4>
-            Memo {props.mode === CREATE_MEMO ? "created" : "updated"}{" "}
-            successfully.
+            Oops! {error.status} {JSON.stringify(error.data)}
           </h4>
-          <Link to="/">Back to list</Link>
         </Alert>
       )}
+      <h5>{mode === CREATE_MEMO ? "New" : "Edit"} Memo</h5>
       <Form noValidate validated={formStatus.validated} onSubmit={handleSubmit}>
         <Form.Group className="mb-3">
-          <Form.Label>
-            {props.mode === CREATE_MEMO ? "Create" : "Edit"} Memo
-          </Form.Label>
+          <Form.Label>Title</Form.Label>
           <Form.Control
             type="text"
             required
@@ -131,8 +136,11 @@ const MemoDetails = (props) => {
             onChange={handleFieldChange}
           ></Form.Control>
         </Form.Group>
-        <Button type="submit" variant="info">
-          {props.mode === CREATE_MEMO ? "Create" : "Update"} Memo
+        <Button type="submit" variant="info" className="me-2">
+          {mode === CREATE_MEMO ? "Add" : "Update"} Memo
+        </Button>
+        <Button variant="outline-info" className="me-2" onClick={goBack}>
+          Cancel
         </Button>
       </Form>
     </Container>

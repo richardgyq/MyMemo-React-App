@@ -36,8 +36,8 @@ const Login = (props) => {
     const form = event.currentTarget;
     const isFormValid = form.checkValidity();
     setFormStatus({
-        ...formStatus,
-        validated: true,
+      ...formStatus,
+      validated: true,
     });
     if (isFormValid) {
       login(formModel)
@@ -50,7 +50,7 @@ const Login = (props) => {
           dispatch(actionLoginSucceeded(userData));
         })
         .catch((response) => {
-          const msg = response.data.error;
+          const msg = response.data?.error ?? response.error;
           setFormStatus({
             ...formStatus,
             error: msg,

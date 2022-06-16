@@ -14,7 +14,6 @@ import { Container } from "react-bootstrap";
 import { useDispatch, useSelector } from "react-redux";
 import { actionLogoutSucceeded, selectCurrentUser } from "store/user-slice";
 import { useLogoutMutation } from "services/user-api";
-import { CREATE_MEMO, UPDATE_MEMO } from "./constants";
 
 function App() {
   const userSlice = useSelector(selectCurrentUser);
@@ -64,11 +63,11 @@ function App() {
           <Route path="/bye" element={<Bye />}></Route>
           <Route
             path="/memos/create"
-            element={<MemoDetails mode={CREATE_MEMO} />}
+            element={<MemoDetails />}
           ></Route>
           <Route
             path="/memos/:id/"
-            element={<MemoDetails mode={UPDATE_MEMO} />}
+            element={<MemoDetails />}
           ></Route>
           <Route path="/login" element={<Login />}></Route>
           <Route path="/signup" element={<Signup />}></Route>

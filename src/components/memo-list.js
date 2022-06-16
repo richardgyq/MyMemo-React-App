@@ -42,11 +42,17 @@ const MemoList = (props) => {
   const dispatch = useDispatch();
   const userSlice = useSelector(selectCurrentUser);
   const listOptions = useSelector(selectListOptions);
-  const { data: memoList = [], isLoading } = useGetMemosQuery(undefined, {
+  const {
+    data: memoList = [],
+    isLoading,
+    error: errorLoadingList,
+  } = useGetMemosQuery(undefined, {
     skip: !userSlice?.isLoggedIn,
   });
-  const [deleteMemo, { isLoading: isDeleting }] = useDeleteMemoMutation();
-  const [toggleStar, { isLoading: isUpdating }] = useToggleStarMutation();
+  const [deleteMemo, { isLoading: isDeleting, error: errorDelete }] =
+    useDeleteMemoMutation();
+  const [toggleStar, { isLoading: isUpdating, error: errorToggleStar }] =
+    useToggleStarMutation();
   const [memoToDelete, setMemoToDelete] = useState({});
 
   const sortedMemos = useMemo(() => {
@@ -132,16 +138,13 @@ const MemoList = (props) => {
             ></FontAwesomeIcon>
             &nbsp;{memo.title}
           </Card.Title>
-          <Card.Text>
-            <b>Memo: </b>
-            {memo.memo}
-          </Card.Text>
+          <Card.Text className="memo-detail-text">{memo.memo}</Card.Text>
           <Card.Text>
             Date created: {moment(memo.created).format("Do MMMM YYYY")}
           </Card.Text>
         </Card.Body>
         <Card.Footer>
-          <Link to={`/memos/${memo.id}`} state={{ currentMemo: memo }}>
+          <Link to={`/memos/${memo.id}`}>
             <Button variant="outline-info" className="me-2">
               Edit
             </Button>
@@ -196,9 +199,18 @@ const MemoList = (props) => {
     );
   }
 
+  const error = errorLoadingList ?? errorToggleStar ?? errorDelete;
+
   return (
     <Container>
       {(isLoading || isDeleting || isUpdating) && <AppSpinner />}
+      {error && (
+        <Alert variant="danger">
+          <h4>
+            Oops! {error.status} {JSON.stringify(error.data)}
+          </h4>
+        </Alert>
+      )}
       <Row>
         <Link to="/memos/create">
           <Button varient="outline-info" className="mb-3">

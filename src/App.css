@@ -10,3 +10,7 @@
   align-items: center;
   z-index: 100;
 }
+
+.memo-detail-text {
+  white-space: pre-line;
+}
