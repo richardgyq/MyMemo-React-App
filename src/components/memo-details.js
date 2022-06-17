@@ -11,6 +11,7 @@ import {
 } from "services/mymemo-api";
 import { CREATE_MEMO, UPDATE_MEMO } from "constants";
 import AppSpinner from "components/app-spinner";
+import { usePrompt } from "services/react-router-dom-prompt-blocker";
 
 const MemoDetails = (props) => {
   const { id: memoId } = useParams();
@@ -21,7 +22,7 @@ const MemoDetails = (props) => {
 
   const emptyMemo = { title: "", memo: "" };
   const {
-    data: memo = emptyMemo,
+    data: memo,
     isLoading,
     error: errorLoadingMemo,
   } = useGetMemoQuery(memoId, {
@@ -33,6 +34,7 @@ const MemoDetails = (props) => {
   const initialFormStatus = {
     validated: false,
     submitted: false,
+    isDirty: false,
   };
 
   // local states
@@ -40,16 +42,26 @@ const MemoDetails = (props) => {
   const [formStatus, setFormStatus] = useState(initialFormStatus);
 
   useEffect(() => {
-    if (mode === UPDATE_MEMO && !isLoading) {
+    if (memo) {
       setFormModel(memo);
     }
-  }, [memo, isLoading, mode]);
+  }, [memo]);
+
+  usePrompt(
+    "You've got unsaved changes. Are you sure you want to leave?",
+    formStatus.isDirty
+  );
 
   const handleFieldChange = (e) => {
     const { name, value } = e.target;
     setFormModel({
       ...formModel,
       [name]: value,
+    });
+
+    setFormStatus({
+      ...formStatus,
+      isDirty: isMemoChanged(),
     });
   };
 
@@ -68,15 +80,18 @@ const MemoDetails = (props) => {
     }
   };
 
-  const isMemoChanged = () =>
-    formModel.title !== memo.title || formModel.memo !== memo.memo;
+  const isMemoChanged = () => {
+    return (
+      !isLoading &&
+      (formModel.title !== (memo ?? emptyMemo).title ||
+        formModel.memo !== (memo ?? emptyMemo).memo)
+    );
+  };
 
   const save = () => {
     if (mode === UPDATE_MEMO) {
-      if (isMemoChanged()) {
+      if (formStatus.isDirty) {
         updateMemo(formModel);
-      } else {
-        goBack();
       }
     } else if (mode === CREATE_MEMO) {
       createMemo(formModel);
@@ -84,6 +99,7 @@ const MemoDetails = (props) => {
     setFormStatus({
       submitted: true,
       validated: false,
+      isDirty: false,
     });
   };
 
@@ -91,12 +107,19 @@ const MemoDetails = (props) => {
     navigate(-1);
   };
 
+  const cancel = () => {
+    setFormStatus({
+      ...formStatus,
+      isDirty: false,
+    });
+    goBack();
+  };
+
   const isBusy = isCreating || isUpdating || isLoading;
   const error = errorLoadingMemo ?? errorCreate ?? errorUpdate;
 
   if (!isBusy && formStatus.submitted && !error) {
     goBack();
-    return <></>;
   }
 
   return (
@@ -139,7 +162,7 @@ const MemoDetails = (props) => {
         <Button type="submit" variant="info" className="me-2">
           {mode === CREATE_MEMO ? "Add" : "Update"} Memo
         </Button>
-        <Button variant="outline-info" className="me-2" onClick={goBack}>
+        <Button variant="outline-info" className="me-2" onClick={cancel}>
           Cancel
         </Button>
       </Form>
