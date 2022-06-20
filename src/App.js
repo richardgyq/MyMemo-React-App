@@ -61,14 +61,8 @@ function App() {
         <Routes>
           <Route path="/" element={<MemoList />}></Route>
           <Route path="/bye" element={<Bye />}></Route>
-          <Route
-            path="/memos/create"
-            element={<MemoDetails />}
-          ></Route>
-          <Route
-            path="/memos/:id/"
-            element={<MemoDetails />}
-          ></Route>
+          <Route path="/memos/create" element={<MemoDetails />}></Route>
+          <Route path="/memos/:id/" element={<MemoDetails />}></Route>
           <Route path="/login" element={<Login />}></Route>
           <Route path="/signup" element={<Signup />}></Route>
         </Routes>

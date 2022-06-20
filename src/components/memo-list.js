@@ -212,11 +212,13 @@ const MemoList = (props) => {
         </Alert>
       )}
       <Row>
-        <Link to="/memos/create">
-          <Button varient="outline-info" className="mb-3">
-            Add Memo
-          </Button>
-        </Link>
+        <Col className="d-flex justify-content-end">
+          <Link to="/memos/create">
+            <Button varient="outline-info" className="mb-2">
+              Add Memo
+            </Button>
+          </Link>
+        </Col>
       </Row>
       <Row className="align-items-center justify-content-md-center">
         <Col sm="auto">

@@ -40,6 +40,7 @@ const MemoDetails = (props) => {
   // local states
   const [formModel, setFormModel] = useState(emptyMemo);
   const [formStatus, setFormStatus] = useState(initialFormStatus);
+  const [shouldGoBack, setShouldGoBack] = useState(false);
 
   useEffect(() => {
     if (memo) {
@@ -47,21 +48,44 @@ const MemoDetails = (props) => {
     }
   }, [memo]);
 
+  useEffect(() => {
+    if (shouldGoBack) {
+      navigate("/");
+    }
+  }, [shouldGoBack, navigate]);
+
   usePrompt(
     "You've got unsaved changes. Are you sure you want to leave?",
     formStatus.isDirty
   );
 
+  const isMemoChanged = (memoToCheck) => {
+    const originalMemo = mode === UPDATE_MEMO ? memo : emptyMemo;
+    const isTheSame = Object.keys(memoToCheck).every(
+      (key) => memoToCheck[key] === originalMemo[key]
+    );
+    return !isTheSame;
+  };
+
   const handleFieldChange = (e) => {
     const { name, value } = e.target;
-    setFormModel({
+    const newModel = {
       ...formModel,
       [name]: value,
-    });
+    };
+    setFormModel(newModel);
 
     setFormStatus({
       ...formStatus,
-      isDirty: isMemoChanged(),
+      isDirty: isMemoChanged(newModel),
+    });
+  };
+
+  const markFormAsCompleted = () => {
+    setFormStatus({
+      submitted: true,
+      validated: false,
+      isDirty: false,
     });
   };
 
@@ -75,51 +99,47 @@ const MemoDetails = (props) => {
       ...formStatus,
       validated: true,
     });
-    if (isFormValid) {
-      save();
+    if (!isFormValid) {
+      return;
     }
+
+    saveData()
+      .then(() => {
+        markFormAsCompleted();
+      })
+      .catch(() => {
+        setFormStatus({
+          ...formStatus,
+          submitted: true,
+        });
+      });
   };
 
-  const isMemoChanged = () => {
-    return (
-      !isLoading &&
-      (formModel.title !== (memo ?? emptyMemo).title ||
-        formModel.memo !== (memo ?? emptyMemo).memo)
-    );
-  };
-
-  const save = () => {
+  const saveData = () => {
     if (mode === UPDATE_MEMO) {
       if (formStatus.isDirty) {
-        updateMemo(formModel);
+        return updateMemo(formModel).unwrap();
       }
     } else if (mode === CREATE_MEMO) {
-      createMemo(formModel);
+      return createMemo(formModel).unwrap();
     }
-    setFormStatus({
-      submitted: true,
-      validated: false,
-      isDirty: false,
+    return new Promise((resolve) => {
+      resolve();
     });
-  };
-
-  const goBack = () => {
-    navigate(-1);
   };
 
   const cancel = () => {
-    setFormStatus({
-      ...formStatus,
-      isDirty: false,
-    });
-    goBack();
+    markFormAsCompleted();
   };
 
+  if (shouldGoBack) {
+    return null;
+  }
   const isBusy = isCreating || isUpdating || isLoading;
   const error = errorLoadingMemo ?? errorCreate ?? errorUpdate;
 
   if (!isBusy && formStatus.submitted && !error) {
-    goBack();
+    setShouldGoBack(true);
   }
 
   return (
